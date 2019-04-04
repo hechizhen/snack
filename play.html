@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+    .map{
+        width: 800px;
+        height: 600px;
+        background-color: #ccc;
+        position: relative;
+    }
+    </style>
+</head>
+<body>
+    <div class="map" id="map"></div>
+    <script>
+    (
+        function(){
+            var elements = [];
+            function Food(x,y,width,height,color){
+        this.x=x||0;
+        this.y=y||0;
+        this.width=width||20;
+        this.height=height||20;
+        this.color=color||"green";
+        }
+      
+        Food.prototype.init=function(map){
+         var div=document.createElement("div");
+         remov();//要放在这里调用
+         map.appendChild(div);
+
+         div.style.width=this.width+"px";
+         div.style.height=this.height+"px";
+         div.style.backgroundColor=this.color;
+        div.style.position="absolute";
+        this.x=parseInt(Math.random()*(map.offsetWidth/this.width))*this.width;
+        this.y=parseInt(Math.random()*(map.offsetHeight)/this.width)*this.height
+        div.style.left=this.x+"px";
+        div.style.top=this.y+"px"; 
+        elements.push(div);//把div加到elments中
+        }
+       
+        function remov(){
+          for(var i=0;i<elements.length;i++){
+              console.log("ss")
+              var ele=elements[i];
+              ele.parentNode.removeChild(ele);//删除elements
+              elements.splice(i,1)//把elements中的子元素也删了
+              }
+          }
+
+        var fd=new Food();
+        window.fd=fd;
+        }()
+    );//食物的
+     
+  (function(){
+      var elements=[];
+      function Snack(width,height,direction){
+       this.width=width||20;
+       this.height=height||20;
+      this.body=[
+         { x:3,y:2,color:"red"},
+         { x:2,y:2,color:"green"},
+         { x:1,y:2,color:"green"},
+      ]
+       this.direction=direction||"right";
+      }
+      function remov(){
+          var i=elements.length-1;
+          for(;i>=0;i--){//等于0是因为蛇头也要删
+           var ele=elements[i];
+
+           ele.parentNode.removeChild(ele);
+
+           elements.splice(i,1)
+          }
+      }
+
+     Snack.prototype.move=function(food,map){
+         var i=this.body.length-1;
+         for(;i>0;i--){
+             this.body[i].x=this.body[i-1].x;
+             this.body[i].y=this.body[i-1].y
+         }
+         switch (this.direction) {
+        case "right":
+          this.body[0].x += 1;
+          break;
+        case "left":
+          this.body[0].x -= 1;
+          break;
+        case "top":
+          this.body[0].y -= 1;
+          break;
+        case "bottom":
+          this.body[0].y += 1;
+          break;
+      }
+         //判断有没有吃到食物
+      //小蛇的头的坐标和食物的坐标一致
+      var headX=this.body[0].x*this.width;
+      var headY=this.body[0].y*this.height;
+      //判断小蛇的头的坐标和食物的坐标是否相同
+      if(headX==food.x&&headY==food.y){
+        //获取小蛇的最后的尾巴
+        var last=this.body[this.body.length-1];
+        //把最后的蛇尾复制一个,重新的加入到小蛇的body中
+        this.body.push({
+          x:last.x,
+          y:last.y,
+          color:last.color
+        });
+        //把食物删除,重新初始化食物
+        food.init(map);
+      }
+     }
+      Snack.prototype.init=function(map){
+          remov();
+       for(var i=0;i<this.body.length;i++){
+           var obj=this.body[i];//数组中每个元素都是对象
+           var div=document.createElement("div");
+           map.appendChild(div)
+           div.style.position="absolute";
+           div.style.width=this.width+"px";
+           div.style.height=this.height+"px";
+           div.style.backgroundColor=obj.color;
+           div.style.left=obj.x*this.width+"px";//obj.x是用上面的的数据的
+           div.style.top=obj.y*this.height+"px"
+
+           elements.push(div);
+       }
+      }
+      window.snack=Snack;
+  }());
+
+   (function(){
+       var that=null;
+       function Game(map){
+        this.snack=new snack();//小蛇
+        this.food=fd;
+        this.map=map;
+        that=this;
+       }
+
+       Game.prototype.init=function(){
+          this.food.init(this.map);//初始化食物---调用食物
+          this.snack.init(this.map);//初始化游戏--调用小蛇
+          this.run(this.food,this.map);
+          this.bindKey()
+       }
+       Game.prototype.run=function(){
+          var timeId= setInterval(function(){
+               this.snack.move(this.food,this.map);
+               this.snack.init(this.map);
+               var maxX=map.offsetWidth/this.snack.width//他能走多少格恒坐标
+               var maxY=map.offsetHeight/this.snack.height//他能做多少的纵坐标
+               var headX=this.snack.body[0].x;
+               var headY=this.snack.body[0].y;
+              if(headX < 0 || headX >= maxX){
+                clearInterval(timeId);
+                alert("游戏结束");
+              }
+              if(headY < 0 || headY >= maxY){
+                clearInterval(timeId);
+                alert("游戏结束");
+              }
+           }.bind(that),120)//这个bind改变了this的指向
+       }
+        Game.prototype.bindKey=function () {
+         document.onkeydown=function(e){
+             switch(e.keyCode){
+          case 37:this.snack.direction="left";break;
+          case 38:this.snack.direction="top";break;
+          case 39:this.snack.direction="right";break;
+          case 40:this.snack.direction="bottom";break;
+             }
+             
+         }.bind(that)
+    };
+       
+       window.Game = Game;
+   }());
+
+   var gm=new Game(document.getElementById("map"));
+   var snack=new snack();
+   
+   gm.init(document.getElementById("map"))
+    </script>
+</body>
+</html>
